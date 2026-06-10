@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>LCX ❤️ WSY · 翻阅我们的诗篇</title>
+<link href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    -webkit-tap-highlight-color: transparent; /* 去除移动端点击灰层 */
+}
+
+:root{
+    --bg:#faf7f2;
+    --card:#fffdf9;
+    --primary:#c9a27c;
+    --text:#4f4f4f;
+    --book-bg:#fef7e8;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Poppins',sans-serif;
+    overflow:hidden;
+    height:100vh;
+    width:100vw;
+    position:fixed;
+    touch-action: pan-x pan-y; /* 保留滚动，不影响翻页 */
+}
+
+/* 漂浮背景 */
+.bg{
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    overflow:hidden;
+    pointer-events:none;
+}
+
+.heart{
+    position:absolute;
+    color:rgba(201,162,124,.15);
+    animation:float 15s linear infinite;
+}
+
+@keyframes float{
+    from{ transform:translateY(110vh); }
+    to{ transform:translateY(-20vh); }
+}
+
+/* 翻页容器 */
+.pages-container{
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+}
+
+.page{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    opacity:0;
+    visibility:hidden;
+    transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+    overflow-y:auto;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+    -webkit-overflow-scrolling: touch; /* 流畅滚动 */
+}
+
+/* 时间轴页面顶部对齐 */
+.page[data-page="3"] {
+    align-items: flex-start;
+    padding-bottom: 100px;
+}
+
+.page.active{
+    opacity:1;
+    visibility:visible;
+    transition: opacity 0.5s ease, visibility 0s linear 0s;
+    z-index:10;
+}
+
+/* 自定义滚动条 (移动端可选) */
+.page::-webkit-scrollbar { width: 4px; }
+.page::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+.page::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
+.container{
+    width:min(1000px,90%);
+    margin:0 auto;
+}
+
+.title{
+    text-align:center;
+    margin-bottom:40px;
+    font-size:2rem;
+    color:var(--primary);
+}
+
+/* 信纸 */
+.letter-paper{
+    background:var(--card);
+    border-radius:24px;
+    padding:50px;
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
+    animation:fadeUp 0.8s ease;
+}
+.letter-title{
+    font-size:2.6rem;
+    text-align:center;
+    margin-bottom:30px;
+    font-family:'Zhi Mang Xing',cursive;
+    color:var(--primary);
+}
+.letter-content{
+    line-height:2;
+    font-size:1.1rem;
+}
+.signature{
+    text-align:right;
+    margin-top:40px;
+    font-size:1.6rem;
+    color:var(--primary);
+    font-family:'Zhi Mang Xing',cursive;
+}
+
+/* 照片页 */
+.photo-area{
+    display:flex;
+    justify-content:center;
+    gap:40px;
+    margin-bottom:30px;
+    flex-wrap:wrap;
+}
+.photo{
+    width:260px;
+    height:340px;
+    background:#ececec;
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow:0 15px 35px rgba(0,0,0,.08);
+}
+.photo img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+.left{ animation:leftMove 0.8s forwards; }
+.right{ animation:rightMove 0.8s forwards; }
+@keyframes leftMove{
+    from{ transform:translateX(-80px); opacity:0;}
+    to{ transform:translateX(0); opacity:1;}
+}
+@keyframes rightMove{
+    from{ transform:translateX(80px); opacity:0;}
+    to{ transform:translateX(0); opacity:1;}
+}
+.couple-name{
+    text-align:center;
+    font-size:2.5rem;
+    color:var(--primary);
+    letter-spacing:4px;
+}
+
+/* 计时卡片 */
+.counter-card{
+    background:white;
+    padding:50px;
+    border-radius:24px;
+    text-align:center;
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
+}
+.meet-date{
+    font-size:2rem;
+    margin:20px 0;
+}
+.counter{
+    font-size:1.6rem;
+    color:var(--primary);
+    font-weight:600;
+}
+
+/* 俏皮时间轴 - 移动端适配加强 */
+.timeline{
+    position:relative;
+    max-width:900px;
+    margin:auto;
+    padding-bottom: 30px;
+}
+.timeline::before{
+    content:'';
+    position:absolute;
+    left:50%;
+    top:0;
+    width:3px;
+    height:100%;
+    background: linear-gradient(to bottom, #eecbad, #c9a27c, #eecbad);
+    border-radius: 3px;
+    transform: translateX(-50%);
+}
+.timeline-item{
+    width:50%;
+    padding:20px 40px;
+    position:relative;
+}
+.timeline-item:nth-child(odd){
+    left:0;
+    text-align:right;
+}
+.timeline-item:nth-child(even){
+    left:50%;
+}
+.timeline-card{
+    background:white;
+    padding:20px 24px;
+    border-radius: 32px 16px 32px 16px;
+    box-shadow:0 12px 28px rgba(0,0,0,0.06);
+    transition: transform 0.25s ease, box-shadow 0.25s;
+    cursor: pointer;
+    display: inline-block;
+    width: 100%;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #faead9;
+}
+.timeline-item:nth-child(odd) .timeline-card{
+    text-align: right;
+}
+.timeline-card:active{
+    transform: scale(0.98);
+    transition: 0.05s;
+}
+.timeline-card::before{
+    content: "🌸";
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 24px;
+    opacity: 0.2;
+    pointer-events: none;
+}
+.timeline-item:nth-child(odd) .timeline-card::before{
+    content: "🍬";
+    right: auto;
+    left: 12px;
+}
+.timeline-card h3{
+    color: #b27d52;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fcf2e8;
+    padding: 4px 12px;
+    border-radius: 40px;
+}
+.timeline-card p{
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: #5f4c38;
+    margin-top: 8px;
+}
+.timeline-hint {
+    text-align: center;
+    margin: 10px 0 20px;
+    font-size: 0.85rem;
+    color: #b68b60;
+    animation: bounceHint 1.8s infinite;
+}
+@keyframes bounceHint {
+    0%,100%{ transform: translateY(0); }
+    50%{ transform: translateY(5px); }
+}
+.back-to-top {
+    position: sticky;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(201,162,124,0.9);
+    backdrop-filter: blur(8px);
+    border: none;
+    padding: 8px 24px;
+    border-radius: 40px;
+    font-size: 0.85rem;
+    color: white;
+    cursor: pointer;
+    margin: 20px auto 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: 0.2s;
+    z-index: 15;
+    width: fit-content;
+    font-weight: 500;
+}
+.back-to-top:active {
+    transform: translateX(-50%) scale(0.96);
+}
+
+/* 音乐卡片 - 确保音频控件可点无遮挡 */
+.music-card{
+    background:rgba(255,255,255,.8);
+    backdrop-filter:blur(20px);
+    padding:30px 20px;
+    border-radius:30px;
+    text-align:center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.album{
+    width:200px;
+    height:200px;
+    background:#ececec;
+    margin:auto;
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+.album img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+.song-title{
+    margin-top:20px;
+    font-size:1.6rem;
+    font-weight: 500;
+    color: #b47c48;
+}
+.artist{
+    color: #a07a58;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+}
+audio{
+    width:100%;
+    margin-top:5px;
+    outline: none;
+    border-radius: 30px;
+}
+
+/* 书册最后一页 */
+.book-page-container {
+    width:100%;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+}
+.book-wrapper {
+    background: #fef7e8;
+    border-radius: 28px 12px 12px 28px;
+    box-shadow: 20px 20px 40px rgba(0,0,0,0.1), -4px 0 12px rgba(0,0,0,0.05);
+    max-width: 800px;
+    width: 100%;
+    padding: 2rem 1.5rem;
+    border-left: 8px solid #d6b38c;
+}
+.book-title {
+    font-size: 2.4rem;
+    font-family: 'Zhi Mang Xing', cursive;
+    text-align: center;
+    color: #b47c48;
+}
+.book-quote {
+    text-align: center;
+    font-style: italic;
+    padding: 16px 0;
+    border-top: 1px dashed #e2cfb5;
+    border-bottom: 1px dashed #e2cfb5;
+    margin: 16px 0;
+    font-size: 0.95rem;
+}
+.book-memory span {
+    background:#fff0e0;
+    padding:6px 16px;
+    border-radius:40px;
+    font-size:0.85rem;
+}
+.signature-book {
+    text-align: center;
+    font-size: 1.5rem;
+    font-family: 'Zhi Mang Xing', cursive;
+    margin-top: 20px;
+    color: var(--primary);
+}
+
+/* 底部导航 - 增大触摸区域 */
+.bottom-nav{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:8px;
+    background:rgba(255,255,255,.85);
+    backdrop-filter:blur(20px);
+    padding:8px 16px;
+    border-radius:60px;
+    z-index:999;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.bottom-nav a{
+    text-decoration:none;
+    color:#7e5a3e;
+    padding:8px 14px;
+    border-radius:40px;
+    transition:.2s;
+    cursor:pointer;
+    font-size:1.3rem;
+    font-weight: 500;
+    -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav a:active{
+    background:var(--primary);
+    color:white;
+    transform: scale(0.94);
+}
+
+/* 翻页提示轻触区 (无实体层，使用全局判定) */
+.swipe-hint {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    padding: 5px 16px;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    color: white;
+    pointer-events: none;
+    z-index: 998;
+    white-space: nowrap;
+    font-weight: 400;
+    letter-spacing: 1px;
+}
+@media (max-width: 600px) {
+    .swipe-hint { font-size: 0.6rem; bottom: 85px; }
+    .bottom-nav a { padding: 6px 12px; font-size: 1.2rem; }
+    .letter-paper { padding: 30px 20px; }
+    .counter-card { padding: 30px 20px; }
+    .timeline-card h3 { font-size: 0.9rem; }
+    .timeline-card p { font-size: 0.8rem; }
+    .title { font-size: 1.6rem; }
+    .book-title { font-size: 1.8rem; }
+}
+
+/* 移动端完全适配时间轴 */
+@media(max-width:768px){
+    .timeline::before{ left:20px; }
+    .timeline-item{ width:100%; left:0!important; text-align:left!important; padding-left:60px; padding-right:20px; }
+    .timeline-item:nth-child(odd) .timeline-card{ text-align: left; }
+    .timeline-card::before{ display: none; }
+    .photo-area{ flex-direction:column; align-items:center; gap:24px;}
+    .photo{ width:240px; height:300px; }
+    .page[data-page="3"] { padding-bottom: 120px; }
+    .container { width: 95%; }
+    .music-card { padding: 25px 15px; }
+    .album { width: 170px; height: 170px; }
+}
+
+/* 动画 */
+@keyframes fadeUp{
+    from{ opacity:0; transform:translateY(30px);}
+    to{ opacity:1; transform:translateY(0);}
+}
+</style>
+</head>
+<body>
+
+<div class="bg" id="bg"></div>
+
+<div class="pages-container" id="pagesContainer">
+    <!-- 第0页 信件 -->
+    <div class="page active" data-page="0">
+        <div class="container">
+            <div class="letter-paper">
+                <div class="letter-title">给最特别的你</div>
+                <div class="letter-content">
+                    <p>还记得那个夏天蝉鸣的夜晚吗，我们的故事就在这样普普通通的一天中真正的悄悄开始。</p>
+                    <p>你像一首写不完的诗，温柔地占据我二分之一的大学时光。谢谢你的出现，让我原本平凡的生活都增添了一份期待。</p>
+                    <p>这是我送给你的第三个礼物，不仅仅是生日礼物，也是我送给你的毕业礼物。虽然其中含有技术的成分，但是俗话说技术是人的延伸，是的没错，其实我是二十一世纪的麦克卢汉来的。⌯'▾'⌯</p>
+                    <p>欢迎来到炉子和雨子的小world🌏</p>
+                </div>
+                <div class="signature">WSY</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第1页 初见照片 -->
+    <div class="page" data-page="1">
+        <div class="container">
+            <h2 class="title">我们</h2>
+            <div class="photo-area">
+                <div class="photo left"><img src="LCX.jpg" alt="LCX"></div>
+                <div class="photo right"><img src="WSY.jpg" alt="WSY"></div>
+            </div>
+            <div class="couple-name">LCX & WSY</div>
+        </div>
+    </div>
+
+    <!-- 第2页 计时 -->
+    <div class="page" data-page="2">
+        <div class="container">
+            <div class="counter-card">
+                <h2>我们的故事开始于</h2>
+                <div class="meet-date">2024-03-14</div>
+                <div class="counter" id="counter">计算中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第3页 时间轴 (完整31个回忆) -->
+    <div class="page" data-page="3">
+        <div class="container">
+            <h2 class="title">✨ 时光跷跷板 ✨</h2>
+            <div class="timeline-hint">↓ 滑动屏幕，轻戳回忆卡片 ↓</div>
+            <div class="timeline">
+                <div class="timeline-item"><div class="timeline-card" data-memory="📱 加上微信那一刻，故事就悄悄开始啦~"><h3>📱 2023.11.30</h3><p>第一次加上微信好友</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🏮 徽州古城的大合照，我们的第一次同框！"><h3>🏮 2023.12.24</h3><p>第一次组队在徽州古城拍摄/第一次大合照！</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🍬 999中装满了甜甜的心意~"><h3>🍬 2024.1.4</h3><p>第一次给我送999中</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="👗 “帮我看看衣服” —— 其实是想多和你说说话"><h3>👗 2024.3.14</h3><p>一句“想你帮我看看衣服”拉开我们友谊的小门！</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="📸 陪拍一下午，你比镜头里的风景更迷人"><h3>📸 2024.4.27</h3><p>陪拍ing</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🍔 你看出我嘴馋的小心思啦~ 超感动！"><h3>🍔 2024.5.11</h3><p>陪我去吃汉堡！呜呜~是看出来我特别想吃才去的</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🎨 染坏了的头发也是独家纪念品呀"><h3>🎨 2024.5.14</h3><p>对不起，给你染了一个不匀的头发</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🎬 熬夜拍大广赛，累并快乐着！"><h3>🎬 2024.6.8</h3><p>拍大广赛视频ing</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🏯 西递的风，记住了我们的笑声"><h3>🏯 2024.6.17</h3><p>去西递见习噜！</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="💼 漫长的实习，幸好有你陪伴"><h3>💼 2024.7.10</h3><p>开始绩溪漫长的实习了૮₍ •︡_ •︠ ₎ა</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🎤 KTV里一句「去广州」，热血沸腾！"><h3>🎤 2024.11.21</h3><p>去KTV！此刻我们决定去广州了！！！</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="✈️ 广州的肥妈和比赛，闪闪发光的回忆"><h3>✈️ 2024.11.29</h3><p>此刻我们进入广州了！开启比赛ing（ps：肥妈我想你！！555广州好幸福）</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🎆 跨年电影和你，是最好的年终礼物"><h3>🎆 2024.12.31</h3><p>2024年最后一天，我们在看电影哦</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🌧️ 下雨天采访，你撑伞的样子好温柔"><h3>🌧️ 2025.3.12</h3><p>今天去太平洋采访噜！当天还在下雨</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🍲 和芳芳老师一起吃饭，像一家人~"><h3>🍲 2025.3.23</h3><p>今天在和芳芳老师一起聚餐哦~ip在徽三说</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="⛰️ 太平的山水，比不上身边人"><h3>⛰️ 2025.4.4</h3><p>不好意思，此刻在太平！！！</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="✂️ 新发型新气象，怎样都好看"><h3>✂️ 2025.4.11</h3><p>剪头发去了..变成了高高高层次啊</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🏨 沉浸式体验，和你一起就像穿越"><h3>🏨 2025.4.16</h3><p>今天在香茗假日酒店-其实是我忘记了具体是啥名字了hhh我们去沉浸式了，还有视频作业呢</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🌾 碧山的慢时光，有你就很甜"><h3>🌾 2025.10.2</h3><p>瞬移到碧山了</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="📷 照片不好看？你在我眼中怎样都美"><h3>📷 2025.10.25</h3><p>今天在拍学习网的照片-好伤心 我的不好看</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🐰 考研间隙一起看疯狂动物城2，是最好的放松"><h3>🐰 2025.11.26</h3><p>考研期间抽空去看疯狂动物城2！好看！</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🍣 滨寿司，下次还要一起去吃！"><h3>🍣 2026.2.2</h3><p>打卡滨寿司中</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🇭🇰 香港机场过夜，有点狼狈但超级难忘"><h3>🇭🇰 2026.2.3</h3><p>ip：香港 雨子生理期第一天中 并且我俩在香港机场度过了“难忘”的第一个晚上啊</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🇸🇬 新加坡的日出，见证了我们的勇气"><h3>🇸🇬 2026.2.4</h3><p>那又怎样~因为我们到新加坡了</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🇲🇾 马六甲的美景，和你同框就是明信片"><h3>🇲🇾 2026.2.7</h3><p>ip：马六甲 这里的我们俩都美美的 马六甲我们喜欢你</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🌟 吉隆坡有点吓人？有你在就不怕"><h3>🌟 2026.2.8</h3><p>ip：吉隆坡 确实小小吓人</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🧋 澳门奶茶甜，你的笑更甜"><h3>🧋 2026.2.10</h3><p>ip：澳门 奶茶好喝！</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="📚 陪着你准备复试，像当初你陪我一样"><h3>📚 2026.3.29</h3><p>陪炉子准备复试中</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🎓 一起走过论文答辩，我们更近了"><h3>🎓 2026.5.10</h3><p>答辩准备！</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="🎓 毕业照定格青春，但我们的故事继续"><h3>🎓 2026.5.11</h3><p>美美拍毕业照啦！！</p></div></div>
+                <div class="timeline-item"><div class="timeline-card" data-memory="💞 每次见面，都像第一次心动"><h3>💞 2026.6.9</h3><p>今天我们见面了</p></div></div>
+            </div>
+            <button class="back-to-top" id="timelineBackBtn">🐣 回到顶端 ↑</button>
+            <div style="text-align: center; margin: 15px 0 30px; font-size: 0.7rem; color: #b68b60;">✨ 共31个珍贵瞬间 · 上下滑动回忆 ✨</div>
+        </div>
+    </div>
+
+    <!-- 第4页 音乐 - 修复播放键可点 -->
+    <div class="page" data-page="4">
+        <div class="container">
+            <div class="music-card">
+                <div class="album"><img src="我们.jpg" alt="专属封面"></div>
+                <div class="song-title">属于我们的歌</div>
+                <div class="artist">LCX ❤️ WSY</div>
+                <audio controls loop preload="metadata">
+                    <source src="未完待续.m4a" type="audio/mpeg">
+                    您的浏览器不支持音频播放，请升级版本
+                </audio>
+                <p style="font-size: 0.75rem; margin-top: 12px; color: #b28b65;">🎧 点击播放按钮，聆听回忆旋律</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第5页 书册 -->
+    <div class="page" data-page="5">
+        <div class="book-page-container">
+            <div class="book-wrapper">
+                <div class="book-title">📖 我们的诗集</div>
+                <div class="book-quote">“我遇见你，就像是远山遇见晚霞，从此万物温柔。”</div>
+                <div class="book-memory" style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin:16px 0;">
+                    <span>✨ 命运转向</span>
+                    <span>🌙 彻夜长谈</span>
+                    <span>🌸 未来约定</span>
+                </div>
+                <p style="text-align:center; color:#634e34; font-size: 0.9rem;">从相识到相知，时间把我们的名字刻在同一颗星星上。<br>LCX ❤️ WSY 的四季与朝夕。</p>
+                <div class="signature-book">WSY · 致我们</div>
+                <div style="text-align:center; margin-top:16px; font-size:0.8rem; color:#b29172;">感谢命运让我们相遇 · 永远未完待续</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 底部导航栏 增大触控 -->
+<div class="bottom-nav">
+    <a data-nav="0">💌</a>
+    <a data-nav="1">📷</a>
+    <a data-nav="2">⏳</a>
+    <a data-nav="3">🌙</a>
+    <a data-nav="4">🎵</a>
+    <a data-nav="5">📖</a>
+</div>
+<div class="swipe-hint">◀ 点击屏幕两侧翻页 ▶</div>
+
+<script>
+// 翻页核心 + 移动端完美排除音频控件
+let currentPage = 0;
+const totalPages = 6;
+const pages = document.querySelectorAll('.page');
+const navLinks = document.querySelectorAll('.bottom-nav a');
+
+function showPage(index) {
+    if (index < 0) index = totalPages - 1;
+    if (index >= totalPages) index = 0;
+    pages.forEach(page => page.classList.remove('active'));
+    pages[index].classList.add('active');
+    currentPage = index;
+    pages[index].scrollTop = 0;
+}
+function nextPage() { showPage(currentPage + 1); }
+function prevPage() { showPage(currentPage - 1); }
+
+// 判断是否应该忽略翻页 (音频、交互元素、卡片、导航)
+function shouldIgnoreFlip(target) {
+    // 核心修复：音频及其所有内部控件 (包括播放按钮、进度条等)
+    if (target.closest('audio')) return true;
+    // 底部导航链接
+    if (target.closest('.bottom-nav a')) return true;
+    // 时间轴卡片（显示回忆弹窗）
+    if (target.closest('.timeline-card')) return true;
+    // 回到顶部按钮
+    if (target.closest('.back-to-top')) return true;
+    // 任何按钮/可交互元素
+    if (target.closest('button, a, input, [role="button"]')) return true;
+    // 底部导航整体区域
+    if (target.closest('.bottom-nav')) return true;
+    return false;
+}
+
+// 全局点击翻页 (基于左右区域30%)
+function onPageClick(e) {
+    if (shouldIgnoreFlip(e.target)) return;
+    
+    const winWidth = window.innerWidth;
+    const clickX = e.clientX;
+    // 左侧30%区域上一页
+    if (clickX < winWidth * 0.3) {
+        e.preventDefault();
+        prevPage();
+    }
+    // 右侧30%区域下一页
+    else if (clickX > winWidth * 0.7) {
+        e.preventDefault();
+        nextPage();
+    }
+}
+
+document.addEventListener('click', onPageClick);
+
+// 键盘左右键支持
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevPage(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); nextPage(); }
+});
+
+// 底部导航点击跳转
+navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = parseInt(link.getAttribute('data-nav'), 10);
+        if (!isNaN(target) && target >= 0 && target < totalPages) showPage(target);
+    });
+});
+
+// 时间轴卡片点击回忆（并防止冒泡）
+document.querySelectorAll('.timeline-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const msg = card.getAttribute('data-memory') || "💖 甜蜜回忆 💖";
+        alert(`📮 记忆小胶囊 📮\n\n${msg}`);
+        card.style.transform = 'scale(0.98)';
+        setTimeout(() => { card.style.transform = ''; }, 120);
+    });
+});
+
+// 回到顶部按钮
+const backBtn = document.getElementById('timelineBackBtn');
+if (backBtn) {
+    backBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const timelinePage = document.querySelector('.page[data-page="3"]');
+        if (timelinePage) timelinePage.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
+
+showPage(0);
+
+// 漂浮爱心
+const bgDiv = document.getElementById('bg');
+for (let i = 0; i < 35; i++) {
+    const heart = document.createElement('div');
+    heart.className = 'heart';
+    heart.innerHTML = '❤';
+    heart.style.left = Math.random() * 100 + '%';
+    heart.style.fontSize = (10 + Math.random() * 32) + 'px';
+    heart.style.animationDuration = (12 + Math.random() * 12) + 's';
+    heart.style.animationDelay = Math.random() * 12 + 's';
+    bgDiv.appendChild(heart);
+}
+
+// 恋爱计时器
+const startDate = new Date('2024-03-14T00:00:00');
+function updateCounter() {
+    const now = new Date();
+    const diff = now - startDate;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (86400000)) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    const counterElem = document.getElementById('counter');
+    if (counterElem) counterElem.innerHTML = `${days} 天 ${hours} 小时 ${mins} 分 ${secs} 秒`;
+}
+setInterval(updateCounter, 1000);
+updateCounter();
+</script>
+</body>
+</html>
